@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.21", "1.22", "1.23"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Test with race detector and coverage
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Verify 100% coverage
+        run: |
+          pct=$(go tool cover -func=coverage.out | grep '^total:' | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${pct}%"
+          awk "BEGIN { if ($pct < 100) { print \"Coverage below 100%\"; exit 1 } }"
+
+      - name: Upload coverage report
+        if: matrix.go == '1.23'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  test-grpcerr:
+    name: Test grpcerr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Download grpcerr modules
+        working-directory: grpcerr
+        run: go mod download
+
+      - name: Test grpcerr with race detector and coverage
+        working-directory: grpcerr
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Verify 100% coverage (grpcerr)
+        working-directory: grpcerr
+        run: |
+          pct=$(go tool cover -func=coverage.out | grep '^total:' | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${pct}%"
+          awk "BEGIN { if ($pct < 100) { print \"Coverage below 100%\"; exit 1 } }"

@@ -1,0 +1,5 @@
+# Go coverage
+coverage.out
+
+# Go test binary
+*.test
