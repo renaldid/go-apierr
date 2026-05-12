@@ -8,11 +8,9 @@
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-00ADD8?logo=go)](go.mod)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
-
 ## The Problem
 
-Every Go backend service eventually needs to map errors to HTTP status codes, gRPC codes, and structured logs — but these concerns are typically scattered across the codebase:
+Every Go backend service eventually needs to map errors to HTTP status codes, gRPC codes, and structured logs, but these concerns are typically scattered across the codebase:
 
 ```go
 // Without go-apierr: repeated, inconsistent, hard to maintain
@@ -25,8 +23,6 @@ if errors.Is(err, ErrUserNotFound) {
 
 `go-apierr` solves this by encoding all three mappings into a single `*Error` value, defined once.
 
----
-
 ## Features
 
 - **Single `*Error` type** — carries a semantic code, message, slog attributes, and an optional wrapped cause
@@ -37,8 +33,6 @@ if errors.Is(err, ErrUserNotFound) {
 - **gRPC support** — optional [`grpcerr`](./grpcerr) sub-module maps every `Code` to a `google.golang.org/grpc/codes.Code`
 - **Zero dependencies** — core module requires only the Go standard library (Go 1.21+)
 - **100% test coverage** — race-detector clean
-
----
 
 ## Installation
 
@@ -51,8 +45,6 @@ For gRPC support (separate module, optional):
 ```bash
 go get github.com/renaldid/go-apierr/grpcerr
 ```
-
----
 
 ## Quick Start
 
@@ -91,8 +83,6 @@ The response body:
   "user_id": "42"
 }
 ```
-
----
 
 ## Usage
 
@@ -159,11 +149,11 @@ json.NewEncoder(w).Encode(p)
 ```go
 // *Error implements slog.LogValuer — use it directly
 slog.Error("request failed", "err", err)
-// → {"err":{"code":"not_found","message":"user not found","id":"42"}}
+// -> {"err":{"code":"not_found","message":"user not found","id":"42"}}
 
 // Or spread flat attributes
 slog.Error("request failed", apierr.LogAttrs(err)...)
-// → {"error.code":"not_found","error.message":"user not found","id":"42"}
+// -> {"error.code":"not_found","error.message":"user not found","id":"42"}
 ```
 
 ### gRPC Handlers
@@ -176,7 +166,7 @@ import "github.com/renaldid/go-apierr/grpcerr"
 func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
     user, err := s.db.FindUser(ctx, req.Id)
     if err != nil {
-        return nil, grpcerr.ToGRPC(err) // → gRPC NotFound status
+        return nil, grpcerr.ToGRPC(err) // -> gRPC NotFound status
     }
     return toProto(user), nil
 }
@@ -185,10 +175,8 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.U
 Converting gRPC errors back to `*Error`:
 
 ```go
-err := grpcerr.FromGRPC(grpcErr) // gRPC status → *apierr.Error
+err := grpcerr.FromGRPC(grpcErr) // gRPC status -> *apierr.Error
 ```
-
----
 
 ## Error Codes and Status Mappings
 
@@ -209,8 +197,6 @@ err := grpcerr.FromGRPC(grpcErr) // gRPC status → *apierr.Error
 | `CodeUnavailable` | `unavailable` | 503 | `Unavailable` |
 | `CodeUnauthenticated` | `unauthenticated` | 401 | `Unauthenticated` |
 
----
-
 ## RFC 9457 Problem Details
 
 `WriteHTTP` and `ToProblem` produce [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) compliant responses. slog attributes attached to the error are serialized as extension members at the top level:
@@ -227,8 +213,6 @@ err := grpcerr.FromGRPC(grpcErr) // gRPC status → *apierr.Error
 }
 ```
 
----
-
 ## Contributing
 
 Contributions, issues, and feature requests are welcome. Please open an issue before submitting a pull request.
@@ -238,8 +222,6 @@ git clone https://github.com/renaldid/go-apierr
 cd go-apierr
 go test -race ./...
 ```
-
----
 
 ## License
 
